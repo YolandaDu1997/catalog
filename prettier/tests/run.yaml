@@ -1,0 +1,45 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: prettier-pipeline
+spec:
+  workspaces:
+  - name: shared-workspace
+    # description: The git repo will be cloned into this workspace and the config-defaults.yaml will be read from it.
+  tasks:
+  - name: fetch-repo
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: shared-workspace
+    params:
+    - name: url
+      value: https://github.com/go-training/helloworld.git
+    - name: revision
+      value: ba5f4379d78b0dbf4f58b0aec7af9bb7f645fa2e
+  - name: check-or-format
+    taskRef:
+      name: prettier
+    runAfter:
+    - fetch-repo
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    params: 
+    - name: args
+      value: 
+        - --write 
+        - "*.md"
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: prettier-pipeline-run
+spec:
+  pipelineRef:
+    name: prettier-pipeline
+  workspaces:
+  - name: shared-workspace
+    persistentVolumeClaim:
+      claimName: workspace-prettier-pvc
